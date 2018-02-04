@@ -8,6 +8,9 @@ https://philmasteryeah.github.io/Bachelor-King/
 
 ![alt text](https://abload.de/img/bachelor2gcsi1.png)
 
+# Installation
+- clone this repo in your Apache24\htdocs directory
+
 # Controls
 - arrow keys and space
 - select new level with space at the doors
