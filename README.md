@@ -1,5 +1,5 @@
 # Bachelor-King
-supermario like javascript game with quintus framework
+- QuintusJS
 
 https://philmasteryeah.github.io/Bachelor-King/
 
