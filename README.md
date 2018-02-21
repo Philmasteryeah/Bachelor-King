@@ -2,7 +2,7 @@
 - made with Quintus JavaScript HTML5 Game Engine http://www.html5quintus.com/
 
 # The Game
-https://philmasteryeah.github.io/Bachelor-King/
+play the game -> https://philmasteryeah.github.io/Bachelor-King/
 
 ![alt text](https://abload.de/img/bachelorposze.png)
 
