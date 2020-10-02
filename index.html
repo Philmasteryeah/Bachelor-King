@@ -1,1204 +1,1203 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title></title>
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-			<script src='lib/quintus.js'></script>
-			<script src='lib/quintus_sprites.js'></script>
-			<script src='lib/quintus_scenes.js'></script>
-			<script src='lib/quintus_input.js'></script>
-			<script src='lib/quintus_anim.js'></script>
-			<script src='lib/quintus_2d.js'></script>
-			<script src='lib/quintus_touch.js'></script>
-			<script src='lib/quintus_ui.js'></script>
-			<script src='lib/quintus_tmx.js'></script>
-			<script src='lib/quintus_audio.js'></script>
-			<style>
-				.hud {
-					border-top-left-radius:		5px;
-					border-top-right-radius: 	5px;
-					background-color: 			#808080;
-					color:						white;			
-					font-family:				"Arial Black", Gadget, sans-serif;
-					border: 					3px solid #9A9494;
-					padding: 					10px 5px 10px 5px;
-					font-size: 					1.3em;
-					text-align: 				center;
-					font-weight: 				bold;					
-				}
-			</style>
-		</head>	
-		<body style="background-color: #000; position: relative; margin-left: auto; margin-right: auto; width: 1200px; ">
-        <div class="hud">
-            Semester 1: <img id="level1" src="images/rhaken.png" style=" width: 15px; height:15px;" /> &nbsp;
-            Semester 2: <img id="level2" src="images/rhaken.png" style=" width: 15px; height:15px;" /> &nbsp;
-            Semester 3: <img id="level3" src="images/rhaken.png" style=" width: 15px; height:15px;" /> &nbsp;
-            <div id="helper" style="margin-top: 4px;">Werde Bachelor King</div>
-        </div>
-			<script>
-// init
-var Q = Quintus()
-        .include("Sprites, Scenes, Input, 2D, Touch, UI, Anim, Audio")
-        .setup({height: 600, width: 1200, development: true}).controls().touch().enableSound();            
 
-var isShowLogo = true;
-
-
-
-// collision mask defintion
-Q.SPRITE_PLAYER = 1;
-Q.SPRITE_DOOR = 8;
-Q.SPRITE_OSI = 5;
-
-// Rätselfragen
-var NumnberQuestmax = 10;
-var NumberQuest =
-{
-    "ReeleZahlen":
-        ["30.4", "pi", "5", "7.3", "sqrt(5)", "i", "3i", "f", "sqrt(-4)", "sqrt(-9)" ],
-    "NatürlicheZahlen":
-        ["3",  "4",  "5",  "6", "7","e","i","pi","3.4","10,2"],
-};
-var NumberQuestXPosiMax = 4;
-var NumberQuestXPosi = [500, 590, 410, 690, 378];
-
-// inplace random sort
-function shuffleArray(array){
-  var array;
-  var tmp, rand;
-  for(var i =0; i < array.length; i++){
-    rand = Math.floor(Math.random() * array.length);
-    tmp = array[i]; 
-    array[i] = array[rand]; 
-    array[rand] =tmp;
-  }
-  return array;
-}
-
-// DEV
-function cheat() {
-	Q('Door').items[1].open();
-	return "noob";
-}
-
-function setHudText(text){
-	document.getElementById("helper").innerHTML = text;
-}
-
-function getHudText(){
-	return document.getElementById("helper").innerHTML;
-}
-
-function setLevelWinImage(){
-	if(document.getElementById('level1').src.indexOf("images/ghaken.png") == -1){
-		document.getElementById('level1').src = "images/ghaken.png";
-		return;
-	}
-	if(document.getElementById('level2').src.indexOf("images/ghaken.png") == -1){
-		document.getElementById('level2').src = "images/ghaken.png";
-		return;
-	}
-	if(document.getElementById('level3').src.indexOf("images/ghaken.png")== -1){
-		document.getElementById('level3').src = "images/ghaken.png";
-		setHudText("Du bist Bachelor King");
-		return;
-	}
-}
-
-// animations
-Q.animations('player', {
-    run_left: { frames: [1,2,3,4,5,6,7], next: 'stand_left', rate: 1/5},
-    run_right: { frames: [1,2,3,4,5,6,7], next: 'stand_right', rate: 1/5},
-    stand_left: { frames: [0]},
-    stand_right: { frames: [0]},
-    jump: { frames: [6], loop:false, rate: 1},
-});
-
-Q.animations('bulb', {
-    switch_on: { frames: [0],rate: 1/2 },
-	switch_off: { frames: [1]},
-});
-
-
-// sprites
-Q.Sprite.extend("Player", {
-    init: function(p) {
-        this._super(p, {
-            sheet: "player",        // Spritesheet
-            sprite: "player",       // Animationsheet
-            x: 110,                 // Initial x position of player
-            y: 300,                 // Initial y position of player
-            scale: 0.2,             // scale sprite to right size
-			flip: "x",              // flip the sprite on the x-axis
-			jumpSpeed: -530,
-			launch: 0.2,
-			type: Q.SPRITE_PLAYER,
-            collisionMask: Q.SPRITE_DEFAULT | Q.SPRITE_DOOR | Q.SPRITE_COLLECTABLE,
-        });
-        this.add("2d, platformerControls, animation");  // Add components
-    },
-	step: function(dt) {
-        if(Q.inputs['up']) {
-			this.play("jump",1);      // add priority to animation
-
-		this.p.launch -= dt;
-		if(this.p.launch < 0) {
-			this.p.launch = this.p.launch + 0.5 * Math.random();
-			Q.audio.play('jump.mp3');
-		}
-						
-        } else if(this.p.vx > 0) {
-			this.p.flip="x";          // flip when going right
-			this.play("run_right");
-        } else if(this.p.vx < 0) {
-			this.p.flip="";           // no flip when going left
-			this.play("run_left");
-        } else {
-			this.play("stand_" + this.p.direction); // stand_left or stand_right
+<head>
+    <title></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script src='lib/quintus.js'></script>
+    <script src='lib/quintus_sprites.js'></script>
+    <script src='lib/quintus_scenes.js'></script>
+    <script src='lib/quintus_input.js'></script>
+    <script src='lib/quintus_anim.js'></script>
+    <script src='lib/quintus_2d.js'></script>
+    <script src='lib/quintus_touch.js'></script>
+    <script src='lib/quintus_ui.js'></script>
+    <script src='lib/quintus_tmx.js'></script>
+    <script src='lib/quintus_audio.js'></script>
+    <style>
+        .hud {
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            background-color: #808080;
+            color: white;
+            font-family: "Arial Black", Gadget, sans-serif;
+            border: 3px solid #9A9494;
+            padding: 10px 5px 10px 5px;
+            font-size: 1.3em;
+            text-align: center;
+            font-weight: bold;
         }
-    },
-});
+    </style>
+</head>
 
-Q.Sprite.extend("Cloud", {
-    init: function (p) {
-        this._super(p, {
-            asset: "cloud.png",
-            scale: 0.6,
-			gefangen: 10,
-            index: 0,
-        });
-    },
-});
+<body style="background-color: #000; position: relative; margin-left: auto; margin-right: auto; width: 1200px; ">
+    <div class="hud">
+        Semester 1: <img id="level1" src="images/rhaken.png" style=" width: 15px; height:15px;" /> &nbsp;
+        Semester 2: <img id="level2" src="images/rhaken.png" style=" width: 15px; height:15px;" /> &nbsp;
+        Semester 3: <img id="level3" src="images/rhaken.png" style=" width: 15px; height:15px;" /> &nbsp;
+        <div id="helper" style="margin-top: 4px;">Werde Bachelor King</div>
+    </div>
+    <script>
+        // init
+        var Q = Quintus()
+            .include("Sprites, Scenes, Input, 2D, Touch, UI, Anim, Audio")
+            .setup({ height: 600, width: 1200, development: true }).controls().touch().enableSound();
 
-Q.Sprite.extend("Teacher", {
-    init: function(p) {
-        this._super(p, {
-            asset: "teacher.png",
-            scale: 1,
-            indexLog: 4,  			// index der eingeloggten Antwort
-            indexRightAnswer: 2,	// default 2 , wird von aussßen gesetzt
-        });
-      this.add("platformerControls");  // Add components
-    },
-    step: function(dt) {
-	if (Q.inputs['fire']){this.checkForWin();}
-	switch(this.p.indexLog)
-		{
-			case 1: 
-				if (Q.inputs['right']) {this.setIndexLog(2);}    
-				if (Q.inputs['down']) {this.setIndexLog(3);}				
-				break;
-			case 2: 
-				if (Q.inputs['left']) {this.setIndexLog(1);}    
-				if (Q.inputs['down']) {this.setIndexLog(4);}    
-				break;
-			case 3:
-				if (Q.inputs['right']) {this.setIndexLog(4);}    
-				if (Q.inputs['up'] ) {this.setIndexLog(1);}    
-				break;
-			case 4:
-				if (Q.inputs['left']) {this.setIndexLog(3);}    
-				if (Q.inputs['up']) {this.setIndexLog(2);}    
-				break;
-		}
-    },
-    setIndexLog: function (indexLog)
-    {
-		for (var index = 1; index <= 4 ; index++) {
-            Q("UI.Text").items[index].p.color = "white";
-            Q("UI.Container").items[index].p.fill = "#184349"
-        }
-		this.p.indexLog = indexLog;
-        Q("UI.Text").items[indexLog].p.color = "black";
-		Q("UI.Container").items[indexLog].p.fill = "#DEDE36";
-    },
-    checkForWin: function ()
-    {
-  		Q("UI.Container").items[this.p.indexRightAnswer].p.fill = "#5BB91C";
-        Q("UI.Text").items[this.p.indexRightAnswer].p.color = "black";
-        if (this.p.indexRightAnswer != this.p.indexLog) {
-            Q("UI.Container").items[this.p.indexLog].p.fill = "#ee4d2e";
-            // was passiet, wenn frage Falsche
-        }
-        else{
-            Q.stageScene("endGame", 1, { label: "Semester beendet" , nextlevel: "level0"});
-        }
-        
-    }
-});
+        var isShowLogo = true;
 
-Q.Sprite.extend("Bit", {
-    init: function(p) {
-        this._super(p, {
-            asset: "logik0.png",
-            scale: 1,
-			value: 0,
-        });
-        this.on("hit");
-    },
 
-    hit: function(col){
-        if(col.obj.isA("Player")) {
-			var calc = parseInt(Q("UI.Text").items[0].p.label);
 
-			if (this.p.asset == "logik0.png"){	// addieren
-				this.p.asset = "logik1.png";
-				calc += this.p.value;
-			}else{								//subtrahieren
-				this.p.asset = "logik0.png";
-				calc -= this.p.value;
-			}
-			Q("UI.Text").items[0].p.label = ""+calc;
+        // collision mask defintion
+        Q.SPRITE_PLAYER = 1;
+        Q.SPRITE_DOOR = 8;
+        Q.SPRITE_OSI = 5;
 
-			//win
-			if(Q("UI.Text").items[0].p.label == Q("UI.Text").items[1].p.label)
-				Q('Door').items[1].open();
-        }
-    },
+        // Rätselfragen
+        var NumnberQuestmax = 10;
+        var NumberQuest =
+        {
+            "ReeleZahlen":
+                ["30.4", "pi", "5", "7.3", "sqrt(5)", "i", "3i", "f", "sqrt(-4)", "sqrt(-9)"],
+            "NatürlicheZahlen":
+                ["3", "4", "5", "6", "7", "e", "i", "pi", "3.4", "10,2"],
+        };
+        var NumberQuestXPosiMax = 4;
+        var NumberQuestXPosi = [500, 590, 410, 690, 378];
 
-    step: function(dt){
-        this.stage.collide(this);
-    },
-});
-
-Q.Sprite.extend("Door", {
-    init: function (p) {
-        this._super(p, {
-            asset: "doorLock.png",
-            scale: 1.1,
-            isOpen: false,
-			nextLevel: "level0",
-			sensor: true,
-        });
-		this.on("sensor");
-	},
-	
-    sensor: function(col){
-		if (col.isA("Player")) {
-            if (Q.inputs['fire'] && this.p.isOpen) {
-				Q.clearStages();
-				Q.stageScene(this.p.nextLevel);
+        // inplace random sort
+        function shuffleArray(array) {
+            var array;
+            var tmp, rand;
+            for (var i = 0; i < array.length; i++) {
+                rand = Math.floor(Math.random() * array.length);
+                tmp = array[i];
+                array[i] = array[rand];
+                array[rand] = tmp;
             }
-		}
-	},
-	open: function(){
-		this.p.asset = "doorOpen.png"
-		this.p.isOpen = true;
-		
-	},
-	close: function(){
-		this.p.asset = "doorLock.png"
-		this.p.isOpen = false;
-	},
-	
-	step: function(dt){
-        this.stage.collide(this);
-    },
-    
-});
-
-Q.Sprite.extend("Rad", {
-    init: function (p) {
-        this._super(p, {
-            asset: "einheitsvektor.png",
-			type: Q.SPRITE_NONE,
-            scale: 1.0,
-
-        });
-    },
- });
-
- Q.Sprite.extend("Magnet", {
-    init: function (p) {
-        this._super(p, {
-            asset: "mag.png",
-            scale: 0.5,
-			move: 2,
-			type: Q.SPRITE_PLAYER,
-            collisionMask: Q.SPRITE_DEFAULT | Q.SPRITE_DOOR,
-        });
-        this.add("2d");
-
-
-		this.on("bump.left", function (collision) {
-            if (collision.obj.isA("Player")) 
-                this.p.x += this.p.move;  // versetzt es immer 2 pixel (move) weit
-        });
-
-        this.on("bump.right", function (collision) {
-            if (collision.obj.isA("Player")) 
-				this.p.x -= this.p.move;
-        });
-    },
-});
-
-Q.Sprite.extend("Bulb", {
-    init: function (p) {
-        this._super(p, {
-			sheet: "bulb",        
-            sprite: "bulb",      
-            scale: 1,
-        });
-		this.add("animation"); 
-		this.play("switch_off");
-    },
-});
-
-Q.Sprite.extend("Coil", {
-    init: function (p) {
-        this._super(p, {
-			asset: "coil.png",
-            scale: 0.5,
-			type: Q.SPRITE_DOOR,
-            collisionMask: Q.SPRITE_NONE,
-            sensor: true,
-        });
-		this.on("sensor");
-    },
-
-	sensor: function(col){
-        if(col.isA("Magnet")) {
-			if(Q('Magnet').items[0].p.vx != 0)
-				Q('Bulb').items[0].play("switch_on");
-			else{
-				Q('Bulb').items[0].play("switch_off");
-				Q('Door').items[1].close();
-			}
-		} 
-		if(Q('Bulb').items[0].p.animation == "switch_on" && Q('Magnet').items[0].p.vx != 0)
-			Q('Door').items[1].open();
-		
-	},
-});
-
-Q.Sprite.extend("Bumper", {
-    init: function (p) {
-        this._super(p, {
-			asset: "bumper.png",
-            scale: 0.4,
-			direction: "",
-
-        });
-		this.add("2d");
-		this.on("hit");
-    },
-	hit: function(col){
-		if(this.p.direction == "right")
-			col.obj.p.vx = -350;
-		if(this.p.direction == "left")
-			col.obj.p.vx = 350;	
-	},
-
-});
-
-Q.Sprite.extend("Box", {
-    init: function(p) {
-        this._super(p, {
-            asset: "box.png",
-            scale: 1,
-        });
-	this.add("2d");
-
-	this.on("bump.right",function(collision) {
-		if(collision.obj.isA("Player")) {
-			//collision.obj.p.vy = -300; // Leiter
-			this.p.x -= 2;
-		}
-	});
-
-	this.on("bump.left",function(collision) {
-		if(collision.obj.isA("Player")) {
-            //collision.obj.p.vy = -300;
-			//this.p.x += 2;
-
-			//tragen
-			//this.p.x = collision.obj.p.x+57;
-			//this.p.y = collision.obj.p.y;
+            return array;
         }
-    });
 
-    this.on("bump.bottom",function(collision) {
-		if(collision.obj.isA("Player")) {
-           // collision.obj.p.vy = -300;
+        // DEV
+        function cheat() {
+            Q('Door').items[1].open();
+            return "noob";
         }
-    });
 
-    this.on("bump.top",function(collision) {
-		if(collision.obj.isA("Player")) {
-            //collision.obj.p.vy = -300;
-			this.p.y -= 3;
+        function setHudText(text) {
+            document.getElementById("helper").innerHTML = text;
         }
-    });
 
-    },
+        function getHudText() {
+            return document.getElementById("helper").innerHTML;
+        }
 
-    step: function(dt){
-        this.stage.collide(this);
-    },
-});
+        function setLevelWinImage() {
+            if (document.getElementById('level1').src.indexOf("images/ghaken.png") == -1) {
+                document.getElementById('level1').src = "images/ghaken.png";
+                return;
+            }
+            if (document.getElementById('level2').src.indexOf("images/ghaken.png") == -1) {
+                document.getElementById('level2').src = "images/ghaken.png";
+                return;
+            }
+            if (document.getElementById('level3').src.indexOf("images/ghaken.png") == -1) {
+                document.getElementById('level3').src = "images/ghaken.png";
+                setHudText("Du bist Bachelor King");
+                return;
+            }
+        }
 
-Q.Sprite.extend("ButtonRed", {
-    init: function (p) {
-        this._super(p, {
-            asset: "buttonRed_pressed.png",
-            scale: 0.5,
-            collisionMask: Q.SPRITE_NONE,
-            sensor: true,
-            Ergebnis: 0,
+        // animations
+        Q.animations('player', {
+            run_left: { frames: [1, 2, 3, 4, 5, 6, 7], next: 'stand_left', rate: 1 / 5 },
+            run_right: { frames: [1, 2, 3, 4, 5, 6, 7], next: 'stand_right', rate: 1 / 5 },
+            stand_left: { frames: [0] },
+            stand_right: { frames: [0] },
+            jump: { frames: [6], loop: false, rate: 1 },
         });
 
-        this.on("sensor");
-    },
-    sensor: function (colObj) {
-        //Q('Door').items[1].p.isOpen;
-        if(this.p.Ergebnis == 1)
-            if(Q.inputs['fire'])
-                Q('Door').items[1].open();
-    }
-});
-
-// OSI Key
-Q.Sprite.extend("OsiKey", {
-    init: function (p) {
-        this._super(p, {
-            asset: "osiKey.png",
-            scale: 0.8,
- 			value: 0,
-        });
-		
-        this.on("hit");
-    },
-
-    hit: function (col) {
-		if(col.obj.isA("Player")) {
-			if(this.p.value == Q('OsiBox').items[0].p.value){
-				Q('OsiBox').items[0].p.value -= 1; 
-				Q('OsiBox').items[0].p.scale -= 0.2;
-				Q('UI.Text').items[7].p.label = Q('OsiBox').items[0].p.value+"";
-				this.destroy();
-				
-				if(Q('OsiBox').items[0].p.value == 0){   //gewonnen
-					Q('OsiBox').destroy();
-					//col.obj.stage.insert(new Q.Door({ x: 1050, y: 400 }));  
-					Q('Door').items[1].open();
-				}
-			}else{
-				// player zurücksetzen
-				col.obj.p.x = 1050;
-				col.obj.p.y = 100;
-				col.obj.stage.insert(new Q.Questionmark({x:300 ,y:-350}), col.obj);
-			}
-		}
-	}
-});
-
-Q.Sprite.extend("OsiBox", {
-    init: function (p) {
-        this._super(p, {
-            asset: "lock.png",
-            scale: 2,
-			value: 7, //startet immer mit 7
-			type: Q.SPRITE_OSI,
-			collisionMask: Q.SPRITE_DOOR | Q.SPRITE_DEFAULT,
-        });
-		
-		this.add("2d");
-		this.on("hit");
-	},
-	
-	hit: function (col) {
-		if(col.obj.isA("Player")) 
-			Q('Questionmark').destroy();
-	},
-
-	
-});
-
-Q.Sprite.extend("OsiHelp", {
-    init: function (p) {
-        this._super(p, {
-            asset: "osi.png",
-            scale: 1,
-        });
-    }
-});
-
-Q.Sprite.extend("Stone", {
-    init: function (p) {
-        this._super(p, {
-            asset: "stone.png",
-            scale: 0.6,
-			move: 2,
-			type: Q.SPRITE_PLAYER,
-            collisionMask: Q.SPRITE_DEFAULT | Q.SPRITE_DOOR,
-        });
-		this.add("2d");
-
-
-		this.on("bump.left", function (collision) {
-            if (collision.obj.isA("Player")) 
-                this.p.x += this.p.move;  // versetzt es immer 2 pixel (move) weit
+        Q.animations('bulb', {
+            switch_on: { frames: [0], rate: 1 / 2 },
+            switch_off: { frames: [1] },
         });
 
-        this.on("bump.right", function (collision) {
-            if (collision.obj.isA("Player")) 
-				this.p.x -= this.p.move;
-        });
-    }
-});
 
-Q.Sprite.extend("Woodbox", {
-    init: function (p) {
-        this._super(p, {
-            asset: "woodbox.png",
-            scale: 0.6,
-			type: Q.SPRITE_PLAYER,
-			move: 2,
-            collisionMask: Q.SPRITE_DEFAULT | Q.SPRITE_DOOR,
-        });
-		this.add("2d");
+        // sprites
+        Q.Sprite.extend("Player", {
+            init: function (p) {
+                this._super(p, {
+                    sheet: "player",        // Spritesheet
+                    sprite: "player",       // Animationsheet
+                    x: 110,                 // Initial x position of player
+                    y: 300,                 // Initial y position of player
+                    scale: 0.2,             // scale sprite to right size
+                    flip: "x",              // flip the sprite on the x-axis
+                    jumpSpeed: -530,
+                    launch: 0.2,
+                    type: Q.SPRITE_PLAYER,
+                    collisionMask: Q.SPRITE_DEFAULT | Q.SPRITE_DOOR | Q.SPRITE_COLLECTABLE,
+                });
+                this.add("2d, platformerControls, animation");  // Add components
+            },
+            step: function (dt) {
+                if (Q.inputs['up']) {
+                    this.play("jump", 1);      // add priority to animation
 
+                    this.p.launch -= dt;
+                    if (this.p.launch < 0) {
+                        this.p.launch = this.p.launch + 0.5 * Math.random();
+                        Q.audio.play('jump.mp3');
+                    }
 
-		this.on("bump.left", function (collision) {
-            if (collision.obj.isA("Player")) 
-                this.p.x += this.p.move;  // versetzt es immer 2 pixel (move) weit
-        });
-
-        this.on("bump.right", function (collision) {
-            if (collision.obj.isA("Player")) 
-				this.p.x -= this.p.move;
-        });
-    }
-});
-
-
-Q.Sprite.extend("Questionmark", {
-    init: function (p) {
-        this._super(p, {
-            asset: "questionmark.png",
-            scale: 1.3,
-			type: Q.SPRITE_NONE,
-            collisionMask: Q.SPRITE_NONE,
-        });
-    }
-});
-
-Q.Sprite.extend("Raindrop", {
-    init: function (p) {
-        this._super(p, {
-            asset: "raindrop.png",
-            scale: 0.7,
-			itsNumber:false,
-            gravity: 0.3,
+                } else if (this.p.vx > 0) {
+                    this.p.flip = "x";          // flip when going right
+                    this.play("run_right");
+                } else if (this.p.vx < 0) {
+                    this.p.flip = "";           // no flip when going left
+                    this.play("run_left");
+                } else {
+                    this.play("stand_" + this.p.direction); // stand_left or stand_right
+                }
+            },
         });
 
-        this.add("2d");
-        this.on("hit");
+        Q.Sprite.extend("Cloud", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "cloud.png",
+                    scale: 0.6,
+                    gefangen: 10,
+                    index: 0,
+                });
+            },
+        });
 
-    },
-    hit: function(col) {
-        if (col.obj.isA("Player") ){
-            if (this.p.itsNumber) {
-				Q('Cloud').items[0].p.index += 1;
+        Q.Sprite.extend("Teacher", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "teacher.png",
+                    scale: 1,
+                    indexLog: 4,  			// index der eingeloggten Antwort
+                    indexRightAnswer: 2,	// default 2 , wird von aussßen gesetzt
+                });
+                this.add("platformerControls");  // Add components
+            },
+            step: function (dt) {
+                if (Q.inputs['fire']) { this.checkForWin(); }
+                switch (this.p.indexLog) {
+                    case 1:
+                        if (Q.inputs['right']) { this.setIndexLog(2); }
+                        if (Q.inputs['down']) { this.setIndexLog(3); }
+                        break;
+                    case 2:
+                        if (Q.inputs['left']) { this.setIndexLog(1); }
+                        if (Q.inputs['down']) { this.setIndexLog(4); }
+                        break;
+                    case 3:
+                        if (Q.inputs['right']) { this.setIndexLog(4); }
+                        if (Q.inputs['up']) { this.setIndexLog(1); }
+                        break;
+                    case 4:
+                        if (Q.inputs['left']) { this.setIndexLog(3); }
+                        if (Q.inputs['up']) { this.setIndexLog(2); }
+                        break;
+                }
+            },
+            setIndexLog: function (indexLog) {
+                for (var index = 1; index <= 4; index++) {
+                    Q("UI.Text").items[index].p.color = "white";
+                    Q("UI.Container").items[index].p.fill = "#184349"
+                }
+                this.p.indexLog = indexLog;
+                Q("UI.Text").items[indexLog].p.color = "black";
+                Q("UI.Container").items[indexLog].p.fill = "#DEDE36";
+            },
+            checkForWin: function () {
+                Q("UI.Container").items[this.p.indexRightAnswer].p.fill = "#5BB91C";
+                Q("UI.Text").items[this.p.indexRightAnswer].p.color = "black";
+                if (this.p.indexRightAnswer != this.p.indexLog) {
+                    Q("UI.Container").items[this.p.indexLog].p.fill = "#ee4d2e";
+                    // was passiet, wenn frage Falsche
+                }
+                else {
+                    Q.stageScene("endGame", 1, { label: "Semester beendet", nextlevel: "level0" });
+                }
+
+            }
+        });
+
+        Q.Sprite.extend("Bit", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "logik0.png",
+                    scale: 1,
+                    value: 0,
+                });
+                this.on("hit");
+            },
+
+            hit: function (col) {
+                if (col.obj.isA("Player")) {
+                    var calc = parseInt(Q("UI.Text").items[0].p.label);
+
+                    if (this.p.asset == "logik0.png") {	// addieren
+                        this.p.asset = "logik1.png";
+                        calc += this.p.value;
+                    } else {								//subtrahieren
+                        this.p.asset = "logik0.png";
+                        calc -= this.p.value;
+                    }
+                    Q("UI.Text").items[0].p.label = "" + calc;
+
+                    //win
+                    if (Q("UI.Text").items[0].p.label == Q("UI.Text").items[1].p.label)
+                        Q('Door').items[1].open();
+                }
+            },
+
+            step: function (dt) {
+                this.stage.collide(this);
+            },
+        });
+
+        Q.Sprite.extend("Door", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "doorLock.png",
+                    scale: 1.1,
+                    isOpen: false,
+                    nextLevel: "level0",
+                    sensor: true,
+                });
+                this.on("sensor");
+            },
+
+            sensor: function (col) {
+                if (col.isA("Player")) {
+                    if (Q.inputs['fire'] && this.p.isOpen) {
+                        Q.clearStages();
+                        Q.stageScene(this.p.nextLevel);
+                    }
+                }
+            },
+            open: function () {
+                this.p.asset = "doorOpen.png"
+                this.p.isOpen = true;
+
+            },
+            close: function () {
+                this.p.asset = "doorLock.png"
+                this.p.isOpen = false;
+            },
+
+            step: function (dt) {
+                this.stage.collide(this);
+            },
+
+        });
+
+        Q.Sprite.extend("Rad", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "einheitsvektor.png",
+                    type: Q.SPRITE_NONE,
+                    scale: 1.0,
+
+                });
+            },
+        });
+
+        Q.Sprite.extend("Magnet", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "mag.png",
+                    scale: 0.5,
+                    move: 2,
+                    type: Q.SPRITE_PLAYER,
+                    collisionMask: Q.SPRITE_DEFAULT | Q.SPRITE_DOOR,
+                });
+                this.add("2d");
+
+
+                this.on("bump.left", function (collision) {
+                    if (collision.obj.isA("Player"))
+                        this.p.x += this.p.move;  // versetzt es immer 2 pixel (move) weit
+                });
+
+                this.on("bump.right", function (collision) {
+                    if (collision.obj.isA("Player"))
+                        this.p.x -= this.p.move;
+                });
+            },
+        });
+
+        Q.Sprite.extend("Bulb", {
+            init: function (p) {
+                this._super(p, {
+                    sheet: "bulb",
+                    sprite: "bulb",
+                    scale: 1,
+                });
+                this.add("animation");
+                this.play("switch_off");
+            },
+        });
+
+        Q.Sprite.extend("Coil", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "coil.png",
+                    scale: 0.5,
+                    type: Q.SPRITE_DOOR,
+                    collisionMask: Q.SPRITE_NONE,
+                    sensor: true,
+                });
+                this.on("sensor");
+            },
+
+            sensor: function (col) {
+                if (col.isA("Magnet")) {
+                    if (Q('Magnet').items[0].p.vx != 0)
+                        Q('Bulb').items[0].play("switch_on");
+                    else {
+                        Q('Bulb').items[0].play("switch_off");
+                        Q('Door').items[1].close();
+                    }
+                }
+                if (Q('Bulb').items[0].p.animation == "switch_on" && Q('Magnet').items[0].p.vx != 0)
+                    Q('Door').items[1].open();
+
+            },
+        });
+
+        Q.Sprite.extend("Bumper", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "bumper.png",
+                    scale: 0.4,
+                    direction: "",
+
+                });
+                this.add("2d");
+                this.on("hit");
+            },
+            hit: function (col) {
+                if (this.p.direction == "right")
+                    col.obj.p.vx = -350;
+                if (this.p.direction == "left")
+                    col.obj.p.vx = 350;
+            },
+
+        });
+
+        Q.Sprite.extend("Box", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "box.png",
+                    scale: 1,
+                });
+                this.add("2d");
+
+                this.on("bump.right", function (collision) {
+                    if (collision.obj.isA("Player")) {
+                        //collision.obj.p.vy = -300; // Leiter
+                        this.p.x -= 2;
+                    }
+                });
+
+                this.on("bump.left", function (collision) {
+                    if (collision.obj.isA("Player")) {
+                        //collision.obj.p.vy = -300;
+                        //this.p.x += 2;
+
+                        //tragen
+                        //this.p.x = collision.obj.p.x+57;
+                        //this.p.y = collision.obj.p.y;
+                    }
+                });
+
+                this.on("bump.bottom", function (collision) {
+                    if (collision.obj.isA("Player")) {
+                        // collision.obj.p.vy = -300;
+                    }
+                });
+
+                this.on("bump.top", function (collision) {
+                    if (collision.obj.isA("Player")) {
+                        //collision.obj.p.vy = -300;
+                        this.p.y -= 3;
+                    }
+                });
+
+            },
+
+            step: function (dt) {
+                this.stage.collide(this);
+            },
+        });
+
+        Q.Sprite.extend("ButtonRed", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "buttonRed_pressed.png",
+                    scale: 0.5,
+                    collisionMask: Q.SPRITE_NONE,
+                    sensor: true,
+                    Ergebnis: 0,
+                });
+
+                this.on("sensor");
+            },
+            sensor: function (colObj) {
+                //Q('Door').items[1].p.isOpen;
+                if (this.p.Ergebnis == 1)
+                    if (Q.inputs['fire'])
+                        Q('Door').items[1].open();
+            }
+        });
+
+        // OSI Key
+        Q.Sprite.extend("OsiKey", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "osiKey.png",
+                    scale: 0.8,
+                    value: 0,
+                });
+
+                this.on("hit");
+            },
+
+            hit: function (col) {
+                if (col.obj.isA("Player")) {
+                    if (this.p.value == Q('OsiBox').items[0].p.value) {
+                        Q('OsiBox').items[0].p.value -= 1;
+                        Q('OsiBox').items[0].p.scale -= 0.2;
+                        Q('UI.Text').items[7].p.label = Q('OsiBox').items[0].p.value + "";
+                        this.destroy();
+
+                        if (Q('OsiBox').items[0].p.value == 0) {   //gewonnen
+                            Q('OsiBox').destroy();
+                            //col.obj.stage.insert(new Q.Door({ x: 1050, y: 400 }));  
+                            Q('Door').items[1].open();
+                        }
+                    } else {
+                        // player zurücksetzen
+                        col.obj.p.x = 1050;
+                        col.obj.p.y = 100;
+                        col.obj.stage.insert(new Q.Questionmark({ x: 300, y: -350 }), col.obj);
+                    }
+                }
+            }
+        });
+
+        Q.Sprite.extend("OsiBox", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "lock.png",
+                    scale: 2,
+                    value: 7, //startet immer mit 7
+                    type: Q.SPRITE_OSI,
+                    collisionMask: Q.SPRITE_DOOR | Q.SPRITE_DEFAULT,
+                });
+
+                this.add("2d");
+                this.on("hit");
+            },
+
+            hit: function (col) {
+                if (col.obj.isA("Player"))
+                    Q('Questionmark').destroy();
+            },
+
+
+        });
+
+        Q.Sprite.extend("OsiHelp", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "osi.png",
+                    scale: 1,
+                });
+            }
+        });
+
+        Q.Sprite.extend("Stone", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "stone.png",
+                    scale: 0.6,
+                    move: 2,
+                    type: Q.SPRITE_PLAYER,
+                    collisionMask: Q.SPRITE_DEFAULT | Q.SPRITE_DOOR,
+                });
+                this.add("2d");
+
+
+                this.on("bump.left", function (collision) {
+                    if (collision.obj.isA("Player"))
+                        this.p.x += this.p.move;  // versetzt es immer 2 pixel (move) weit
+                });
+
+                this.on("bump.right", function (collision) {
+                    if (collision.obj.isA("Player"))
+                        this.p.x -= this.p.move;
+                });
+            }
+        });
+
+        Q.Sprite.extend("Woodbox", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "woodbox.png",
+                    scale: 0.6,
+                    type: Q.SPRITE_PLAYER,
+                    move: 2,
+                    collisionMask: Q.SPRITE_DEFAULT | Q.SPRITE_DOOR,
+                });
+                this.add("2d");
+
+
+                this.on("bump.left", function (collision) {
+                    if (collision.obj.isA("Player"))
+                        this.p.x += this.p.move;  // versetzt es immer 2 pixel (move) weit
+                });
+
+                this.on("bump.right", function (collision) {
+                    if (collision.obj.isA("Player"))
+                        this.p.x -= this.p.move;
+                });
+            }
+        });
+
+
+        Q.Sprite.extend("Questionmark", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "questionmark.png",
+                    scale: 1.3,
+                    type: Q.SPRITE_NONE,
+                    collisionMask: Q.SPRITE_NONE,
+                });
+            }
+        });
+
+        Q.Sprite.extend("Raindrop", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "raindrop.png",
+                    scale: 0.7,
+                    itsNumber: false,
+                    gravity: 0.3,
+                });
+
+                this.add("2d");
+                this.on("hit");
+
+            },
+            hit: function (col) {
+                if (col.obj.isA("Player")) {
+                    if (this.p.itsNumber) {
+                        Q('Cloud').items[0].p.index += 1;
+                    } else {
+                        Q('Cloud').items[0].p.index -= 1;
+                    }
+                    Q("UI.Text").items[0].p.label = "Natürliche Zahlen\n" + Q('Cloud').items[0].p.index + " von 10";
+                    if (Q('Cloud').items[0].p.index >= Q('Cloud').items[0].p.gefangen)
+                        Q('Door').items[1].open();
+
+                    this.getNumber();
+                    this.p.y = 340;
+                } else { //resetet Number 
+                    this.getNumber();
+                    this.p.y = 340;
+                }
+            },
+            getNumber: function () {
+                var rndNumber = Math.floor((Math.random() * NumnberQuestmax));
+                if (rndNumber < (NumnberQuestmax / 2)) {
+                    this.p.itsNumber = true;
+                } else {
+                    this.p.itsNumber = false;
+                }
+                Q("UI.Text").items[1].p.label = NumberQuest["NatürlicheZahlen"][rndNumber];
+                rndNumber = Math.floor((Math.random() * NumberQuestXPosiMax));
+                this.p.x = NumberQuestXPosi[rndNumber];
+            },
+        });
+
+        Q.Sprite.extend("VerticalEnemy", {
+            init: function (p) {
+                this._super(p, {
+                    asset: "zettel.png",
+                    scale: 1,
+                    vx: -350, //fluggeschwindigkeit
+                    gravity: 0,
+                    isRigthAnswer: false,
+                    label: "",
+
+                });
+                var stage = Q('VerticalEnemySpawn').stage; // evil hack
+                stage.insert(new Q.UI.Text({ label: this.p.label, color: "black", scale: 1.2 }), this);
+
+                this.add("2d");
+                this.on("bump.top, bump.left, bump.right, bump.bottom", function () {
+                    this.p.vx = 0;
+                });
+            },
+        });
+
+        Q.Sprite.extend("VerticalEnemySpawn", {
+            init: function (p) {
+                this._super(p, {
+                    launchDelay: 0.75,
+                    launchRandom: 1,
+                    launch: 2,
+                    questions: [],
+                    currentQuestIndex: 0,
+                    countRightQuestions: 0,
+                    countMaxQuestions: 10,
+                });
+                var stage = Q('VerticalEnemySpawn').stage; // evil hack
+
+                stage.insert(new Q.UI.Text({ color: "black", scale: 1, x: 650, y: 350 }), this);
+                stage.insert(new Q.VerticalEnemy({ x: 1300, y: 590 }));
+                stage.insert(new Q.VerticalEnemy({ x: 1000, y: 510 }));
+                stage.insert(new Q.UI.Text({ x: 650, y: 400, label: this.p.countRightQuestions + " von " + this.p.countMaxQuestions }));
+                this.setLabels();
+
+            },
+            update: function (dt) {
+                // delay
+                this.p.launch -= dt;
+                if (this.p.launch < 0)
+                    this.p.launch = this.p.launchDelay + this.p.launchRandom * Math.random();
+
+                // 0	lower
+                // 1 	upper
+                for (var idx in Q('VerticalEnemy').items) {
+                    var item = Q('VerticalEnemy').items[idx];
+                    if (item.p.x < 70) 		// außerhalb -> antwort bleibt drauf
+                        this.restart(item);
+                    if (item.p.vx == 0)		// kollision mit Spieler -> neue antwort 
+                        this.restartOnCol(item);
+                }
+
+                if (this.p.countMaxQuestions == this.p.countRightQuestions)
+                    Q('Door').items[1].open();
+
+            },
+            restart: function (verticalEnemy) {
+                var xPos = Q('Player').items[0].p.x;
+                var rand = (Math.random() * (Q.width - 800)) + 800;
+                verticalEnemy.p.x = xPos + Q.width / 2 + rand;
+                verticalEnemy.p.vx = -350; // Fluggeschwindigkeit TODO random ändern evtl
+            },
+            restartOnCol: function (verticalEnemy) {
+                if (verticalEnemy.p.isRigthAnswer) {
+                    this.p.countRightQuestions++;
+                    this.setLabels();
+                } else {
+                    this.p.countRightQuestions -= 1;
+                }
+
+                Q('UI.Text').items[3].p.label = this.p.countRightQuestions + " von " + this.p.countMaxQuestions;
+
+                var xPos = Q('Player').items[0].p.x;
+                var rand = (Math.random() * (Q.width - 800)) + 800;
+                verticalEnemy.p.x = xPos + Q.width / 2 + rand;
+                verticalEnemy.p.vx = -350;
+
+            },
+            setLabels: function () {
+                //var rand =  Math.floor(Math.random() * this.p.questions.length);
+                var rand = this.p.currentQuestIndex;
+                var rightIndex = parseInt(this.p.questions[rand][3]);
+                Q('UI.Text').items[0].p.label = this.p.questions[rand][0]; // Frage  
+                Q('UI.Text').items[1].p.label = this.p.questions[rand][1]; // unten
+                Q('UI.Text').items[2].p.label = this.p.questions[rand][2]; // oben
+                Q('VerticalEnemy').items[0].p.isRigthAnswer = false;
+                Q('VerticalEnemy').items[1].p.isRigthAnswer = false;
+                Q('VerticalEnemy').items[rightIndex - 1].p.isRigthAnswer = true;
+
+                this.p.currentQuestIndex++;
+                if (this.p.currentQuestIndex == this.p.questions.length)
+                    this.p.currentQuestIndex = 0;
+            }
+        });
+        // Hauptmenü
+        Q.scene("level0", function (stage) {
+            ///////////////////////////
+            //--------Door 1--------
+            //
+            //	level1	=	Bitlevel
+            //	level2	=	Sin Cos
+            //	level5	= 	Frage
+            //
+            //--------Door 2--------
+            //
+            //	level3	=	Magnet
+            // 	level4	=	Wolkenlevel
+            //	level8	= 	Frage
+            //
+            //--------Door 3--------
+            //	
+            //	level6	= 	OsiLevel
+            //	level4	=	Fliegelevel
+            //	level9	= 	Frage
+            //
+            ///////////////////////////	
+
+            // Nur beim ersten start Logo anzeigen
+            if (isShowLogo) {
+                //setHudText(" ");
+                Q.audio.play('title.mp3');
+                stage.add("viewport");
+                stage.centerOn(600, 370);
+
+                stage.insert(new Q.Repeater({ asset: "background.png", speedX: 0.5, speedY: 0.5, scale: 1.2 }));
+                stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level0.tmx', layerIndex: 2, sheet: 'tiles', tileW: 70, tileH: 70 }));
+
+                var logo = stage.insert(new Q.UI.Container({ x: Q.width / 2, y: Q.height / 2 }));
+                var btnLogo = logo.insert(new Q.UI.Button({ asset: 'logo.png', x: 0, y: 0 }))
+                logo.fit(10);
+
+                btnLogo.on("click", function () {
+                    isShowLogo = false;
+                    Q.clearStages();
+                    Q.audio.stop('title.mp3');
+                    Q.stageScene('level0');
+                });
+
             } else {
-                Q('Cloud').items[0].p.index -= 1;
+                Q.audio.stop();
+                Q.audio.play('returns.mp3');
+                setHudText("Drücke Leertaste um durch eine Tür zu gehen und das Semester zu beginnen.");
+                var background = new Q.TileLayer({ dataAsset: 'level0.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
+                stage.insert(background);
+                background = new Q.TileLayer({ dataAsset: 'level0.tmx', layerIndex: 1, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
+
+                stage.insert(background);
+                stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level0.tmx', layerIndex: 2, sheet: 'tiles', tileW: 70, tileH: 70 }));
+
+                stage.insert(new Q.Door({ x: 380, y: 591, nextLevel: "level1" })).open();
+                stage.insert(new Q.Door({ x: 770, y: 591, nextLevel: "level3" })).open();
+                stage.insert(new Q.Door({ x: 1150, y: 591, nextLevel: "level6" })).open();
+
+                var player = stage.insert(new Q.Player({ y: 600 }));
+                stage.add("viewport").follow(player, { x: true, y: true }, { minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h });
             }
-            Q("UI.Text").items[0].p.label = "Natürliche Zahlen\n" + Q('Cloud').items[0].p.index + " von 10";
-            if (Q('Cloud').items[0].p.index >= Q('Cloud').items[0].p.gefangen) 
-                Q('Door').items[1].open();
-            
-			this.getNumber();
-			this.p.y = 340;
-        } else { //resetet Number 
-            this.getNumber();
-            this.p.y = 340;
-        }
-    },
-    getNumber: function(){
-        var rndNumber = Math.floor((Math.random() * NumnberQuestmax));
-        if (rndNumber < (NumnberQuestmax / 2)) {
-            this.p.itsNumber = true;
-        } else {
-            this.p.itsNumber = false;
-        }
-        Q("UI.Text").items[1].p.label = NumberQuest["NatürlicheZahlen"][rndNumber];
-        rndNumber = Math.floor((Math.random() * NumberQuestXPosiMax));
-        this.p.x = NumberQuestXPosi[rndNumber];
-    },
-});
-
-Q.Sprite.extend("VerticalEnemy", {
-    init: function (p) {
-        this._super(p, {
-            asset: "zettel.png",
-			scale: 1,
-            vx: -350, //fluggeschwindigkeit
-            gravity: 0,
-            isRigthAnswer: false,
-			label: "",
-		
         });
-		var stage = Q('VerticalEnemySpawn').stage; // evil hack
-		stage.insert(new Q.UI.Text({ label: this.p.label, color: "black", scale: 1.2 }), this); 
-		
-        this.add("2d");
-		this.on("bump.top, bump.left, bump.right, bump.bottom", function () {
-			this.p.vx = 0;
-		});
-	},
-});
 
-Q.Sprite.extend("VerticalEnemySpawn",{
-    init: function (p) {
-        this._super(p, {
-            launchDelay: 0.75,
-			launchRandom: 1,
-			launch: 2,
-			questions: [],
-			currentQuestIndex: 0,
-			countRightQuestions: 0,
-			countMaxQuestions: 10,
+        // Bitlevel
+        Q.scene("level1", function (stage) {
+            Q.audio.stop();
+            Q.audio.play('locker.mp3');
+            setHudText("Finde den richtigen binären Code.");
+            var background = new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
+            stage.insert(new Q.Repeater({ asset: "background.png", speedX: 0.5, speedY: 0.5, scale: 1.2 }));
+            stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 1, sheet: 'tiles', tileW: 70, tileH: 70 }));
+
+            stage.insert(new Q.Door({ x: 250, y: 591, nextLevel: "level0" })).open();
+            stage.insert(new Q.Door({ x: 1100, y: 591, nextLevel: "level2" })).close();
+
+            var player = stage.insert(new Q.Player({ y: 600 }));
+            stage.add("viewport").follow(player, { x: true, y: true }, { minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h });
+
+            var coords = [
+                { 'x': 500, 'y': 500, 'value': 64 },
+                { 'x': 550, 'y': 500, 'value': 32 },
+                { 'x': 600, 'y': 500, 'value': 16 },
+                { 'x': 650, 'y': 500, 'value': 8 },
+                { 'x': 700, 'y': 500, 'value': 4 },
+                { 'x': 750, 'y': 500, 'value': 2 },
+                { 'x': 800, 'y': 500, 'value': 1 },
+            ];
+
+            for (var idx in coords)
+                stage.insert(new Q.Bit({ x: coords[idx].x, y: coords[idx].y, value: coords[idx].value }));	//2 hoch 6
+
+            // Anzeige
+            var statsContainer = stage.insert(new Q.UI.Container({ fill: "gray", x: 650, y: 420, border: 1, shadow: 2, shadowColor: "rgba(0,0,0,0.5)", w: 450, h: 40 }));
+            stage.insert(new Q.UI.Text({ label: "0", color: "white", x: -100, y: 0 }), statsContainer); // calc
+            stage.insert(new Q.UI.Text({ label: "" + Math.floor((Math.random() * 127) + 1), color: "white", x: 100, y: 0 }), statsContainer); // res
+
         });
-	var stage = Q('VerticalEnemySpawn').stage; // evil hack
-	
-	stage.insert(new Q.UI.Text({ color: "black", scale: 1, x: 650, y: 350 }), this); 
-	stage.insert(new Q.VerticalEnemy({x: 1300, y: 590})); 
-	stage.insert(new Q.VerticalEnemy({x: 1000, y: 510})); 
-	stage.insert(new Q.UI.Text({x: 650, y: 400, label: this.p.countRightQuestions+" von "+this.p.countMaxQuestions }));
-	this.setLabels();
-	
-	},
-	update: function(dt) {
-		// delay
-		this.p.launch -= dt;
-		if(this.p.launch < 0) 
-			this.p.launch = this.p.launchDelay + this.p.launchRandom * Math.random();
 
-		// 0	lower
-		// 1 	upper
-		for ( var idx in Q('VerticalEnemy').items) {
-			var item = Q('VerticalEnemy').items[idx];
-			if(item.p.x < 70) 		// außerhalb -> antwort bleibt drauf
-				this.restart(item);
-			if(item.p.vx == 0)		// kollision mit Spieler -> neue antwort 
-				this.restartOnCol(item);
-		}
-		
-		if(this.p.countMaxQuestions == this.p.countRightQuestions)
-			Q('Door').items[1].open();
-		
-	},
-	restart: function(verticalEnemy){
-		var xPos = Q('Player').items[0].p.x;
-		var rand = (Math.random() * (Q.width - 800)) + 800;
-		verticalEnemy.p.x = xPos + Q.width/2 + rand;
-		verticalEnemy.p.vx = -350; // Fluggeschwindigkeit TODO random ändern evtl
-	},
-	restartOnCol: function(verticalEnemy){
-		if(verticalEnemy.p.isRigthAnswer){
-			this.p.countRightQuestions++;
-			this.setLabels();
-		}else{
-			this.p.countRightQuestions-=1;
-		}
-		
-		Q('UI.Text').items[3].p.label = this.p.countRightQuestions+" von "+this.p.countMaxQuestions;
-		
-		var xPos = Q('Player').items[0].p.x;
-		var rand = (Math.random() * (Q.width - 800)) + 800;
-		verticalEnemy.p.x = xPos + Q.width/2 + rand;
-		verticalEnemy.p.vx = -350; 
-		
-	},
-	setLabels: function(){
-		//var rand =  Math.floor(Math.random() * this.p.questions.length);
-		var rand = this.p.currentQuestIndex;
-		var rightIndex = parseInt(this.p.questions[rand][3]);
-		Q('UI.Text').items[0].p.label = this.p.questions[rand][0]; // Frage  
-		Q('UI.Text').items[1].p.label = this.p.questions[rand][1]; // unten
-		Q('UI.Text').items[2].p.label = this.p.questions[rand][2]; // oben
-		Q('VerticalEnemy').items[0].p.isRigthAnswer = false;
-		Q('VerticalEnemy').items[1].p.isRigthAnswer = false;
-		Q('VerticalEnemy').items[rightIndex - 1].p.isRigthAnswer = true;
-		
-		this.p.currentQuestIndex++;
-		if(this.p.currentQuestIndex==this.p.questions.length)
-			this.p.currentQuestIndex = 0;
-	}	
-});
-// Hauptmenü
-Q.scene("level0",function(stage) {
-	///////////////////////////
-	//--------Door 1--------
-	//
-	//	level1	=	Bitlevel
-	//	level2	=	Sin Cos
-	//	level5	= 	Frage
-	//
-	//--------Door 2--------
-	//
-	//	level3	=	Magnet
-	// 	level4	=	Wolkenlevel
-	//	level8	= 	Frage
-	//
-	//--------Door 3--------
-	//	
-	//	level6	= 	OsiLevel
-	//	level4	=	Fliegelevel
-	//	level9	= 	Frage
-	//
-	///////////////////////////	
+        // Sin Cos Level
+        Q.scene("level2", function (stage) {
+            setHudText("Finde den richtigen Winkel und bestätige mit der Leertaste.");
+            var background = new Q.TileLayer({ dataAsset: 'level2.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
+            stage.insert(new Q.Repeater({ asset: "background.png", speedX: 0.5, speedY: 0.5, scale: 1.2 }));
+            stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level2.tmx', layerIndex: 1, sheet: 'tiles', tileW: 70, tileH: 70 }));
 
-	// Nur beim ersten start Logo anzeigen
-	if(isShowLogo){
-		//setHudText(" ");
-	  	Q.audio.play('title.mp3');
-		stage.add("viewport");
-		stage.centerOn(600,370);
-		
-		stage.insert(new Q.Repeater({ asset: "background.png", speedX: 0.5, speedY: 0.5, scale: 1.2 }));
-		stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level0.tmx', layerIndex:2,  sheet: 'tiles', tileW: 70, tileH: 70 }));
-		
-		var logo = stage.insert(new Q.UI.Container({ x: Q.width/2, y: Q.height/2}));
-		var btnLogo = logo.insert(new Q.UI.Button({asset: 'logo.png' ,x: 0, y: 0}))
-		logo.fit(10);
+            var idxErgebnis = Math.floor((Math.random() * 4));
+            var ergebnisse = [[0, -1], [1, 0], [0, 1], [-1, 0]]
 
-		btnLogo.on("click",function() {
-			isShowLogo = false;
-			Q.clearStages();
-			Q.audio.stop('title.mp3');
-			Q.stageScene('level0');
-		});
+            stage.insert(new Q.Door({ x: 350, y: 591, nextLevel: "level0" })).open();
+            stage.insert(new Q.Door({ x: 1150, y: 591, nextLevel: "level5" })).close();
 
-	}else{
-		Q.audio.stop();
-		Q.audio.play('returns.mp3');
-		setHudText("Drücke Leertaste um durch eine Tür zu gehen und das Semester zu beginnen.");
-		var background = new Q.TileLayer({ dataAsset: 'level0.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
-		stage.insert(background);
-		background = new Q.TileLayer({ dataAsset: 'level0.tmx', layerIndex: 1, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
-		
-		stage.insert(background);
-	    stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level0.tmx', layerIndex:2,  sheet: 'tiles', tileW: 70, tileH: 70 }));
+            stage.insert(new Q.ButtonRed({ x: 595, y: 265, }));	//für X=pi
+            stage.insert(new Q.ButtonRed({ x: 805, y: 55, }));	//für X=0,5*pi
+            stage.insert(new Q.ButtonRed({ x: 1015, y: 265, }));	//für X=0
+            stage.insert(new Q.ButtonRed({ x: 805, y: 475, })); //für X=1,5*pi
 
-		stage.insert(new Q.Door({ x: 380, y: 591, nextLevel: "level1"})).open();  		
-		stage.insert(new Q.Door({ x: 770, y: 591, nextLevel: "level3"})).open();  
-		stage.insert(new Q.Door({ x: 1150, y: 591, nextLevel: "level6"})).open();
-		
-		var player = stage.insert(new Q.Player({y:600}));
-		stage.add("viewport").follow(player,{x: true, y: true},{minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h});
-	}
-});
+            stage.insert(new Q.Rad({ x: 850, y: 290 }));
 
-// Bitlevel
-Q.scene("level1",function(stage) {
-	Q.audio.stop();
-	Q.audio.play('locker.mp3');
-	setHudText("Finde den richtigen binären Code.");
-    var background = new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
-	stage.insert(new Q.Repeater({ asset: "background.png", speedX: 0.5, speedY: 0.5, scale: 1.2 }));
-    stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex:1,  sheet: 'tiles', tileW: 70, tileH: 70 }));      
+            Q('ButtonRed').items[idxErgebnis].p.Ergebnis = 1
 
-	stage.insert(new Q.Door({ x: 250, y: 591, nextLevel: "level0"})).open();  		
-	stage.insert(new Q.Door({ x: 1100, y: 591, nextLevel: "level2"})).close();  		
-		
-	var player = stage.insert(new Q.Player({y:600}));
-    stage.add("viewport").follow(player,{x: true, y: true},{minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h});
-	
-	var coords = [ 
-		{'x': 500, 'y': 500, 'value': 64},
-		{'x': 550, 'y': 500, 'value': 32},
-		{'x': 600, 'y': 500, 'value': 16},
-		{'x': 650, 'y': 500, 'value': 8},
-		{'x': 700, 'y': 500, 'value': 4},
-		{'x': 750, 'y': 500, 'value': 2},
-		{'x': 800, 'y': 500, 'value': 1},
-	];
-	
-	for(var idx in coords)
-		stage.insert(new Q.Bit({x:coords[idx].x, y: coords[idx].y, value: coords[idx].value}));	//2 hoch 6
-
-	// Anzeige
-	var statsContainer = stage.insert(new Q.UI.Container({ fill: "gray", x: 650, y: 420, border: 1,  shadow: 2,	shadowColor: "rgba(0,0,0,0.5)",	w: 450, h: 40}));
-	stage.insert(new Q.UI.Text({label: "0", color: "white", x: -100,	y: 0 }),statsContainer); // calc
-	stage.insert(new Q.UI.Text({label: ""+Math.floor((Math.random() * 127) + 1), color: "white", x: 100, y: 0 }),statsContainer); // res
-
-});
-
-// Sin Cos Level
-Q.scene("level2",function(stage) {
-	setHudText("Finde den richtigen Winkel und bestätige mit der Leertaste.");
-    var background = new Q.TileLayer({ dataAsset: 'level2.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
-    stage.insert(new Q.Repeater({ asset: "background.png", speedX: 0.5, speedY: 0.5 , scale: 1.2}));
-    stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level2.tmx', layerIndex:1,  sheet: 'tiles', tileW: 70, tileH: 70 }));
-
-    var idxErgebnis = Math.floor((Math.random() * 4));
-    var ergebnisse = [[0,-1],[1,0],[0,1],[-1,0]]
-
-	stage.insert(new Q.Door({ x: 350, y: 591, nextLevel: "level0"})).open();  		
-	stage.insert(new Q.Door({ x: 1150, y: 591, nextLevel: "level5"})).close();  	
-	
-    stage.insert(new Q.ButtonRed({ x: 595, y: 265,}));	//für X=pi
-    stage.insert(new Q.ButtonRed({ x: 805, y: 55, }));	//für X=0,5*pi
-    stage.insert(new Q.ButtonRed({ x: 1015, y: 265,}));	//für X=0
-    stage.insert(new Q.ButtonRed({ x: 805, y: 475, })); //für X=1,5*pi
-    
-	stage.insert(new Q.Rad({ x: 850, y: 290}));
-    
-    Q('ButtonRed').items[idxErgebnis].p.Ergebnis = 1
-
-    //Main anzeige
-    var statsContainer1 = stage.insert(new Q.UI.Container({ fill: "gray", x: 300, y: 250, border: 1, shadow: 2, shadowColor: "rgba(0,0,0,0.5)", w: 300, h: 100 }));
-    stage.insert(new Q.UI.Text({ label: "Für welches x ist  \nsin  (x) = " + ergebnisse[idxErgebnis][0] + " und \ncos (x) = " + ergebnisse[idxErgebnis][1] , color: "white", x: 0, y: 0 }), statsContainer1); // item 0
+            //Main anzeige
+            var statsContainer1 = stage.insert(new Q.UI.Container({ fill: "gray", x: 300, y: 250, border: 1, shadow: 2, shadowColor: "rgba(0,0,0,0.5)", w: 300, h: 100 }));
+            stage.insert(new Q.UI.Text({ label: "Für welches x ist  \nsin  (x) = " + ergebnisse[idxErgebnis][0] + " und \ncos (x) = " + ergebnisse[idxErgebnis][1], color: "white", x: 0, y: 0 }), statsContainer1); // item 0
 
 
-    var player = stage.insert(new Q.Player());
-    
-    stage.add("viewport").follow(player,{x: true, y: true},{minX: 0, maxX:background.p.w, minY: 0, maxY: background.p.h});
-    stage.viewport.offsetY = 140;
+            var player = stage.insert(new Q.Player());
 
-	//statsContainer1 = stage.insert(new Q.UI.Container({ asset: "gray", x: 150, y: 550, border: 1, shadow: 2, shadowColor: "rgba(0,0,0,0.5)", w: 300, h: 100 }));
-    //stage.insert(new Q.UI.Text({ label: "Für welches x ist  \nsin  (x) = " + A[tmp][0] + " und \ncos (x) = " + A[tmp][1] , color: "white", x: 0, y: 0 }), statsContainer1); // item 0
+            stage.add("viewport").follow(player, { x: true, y: true }, { minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h });
+            stage.viewport.offsetY = 140;
 
-});
+            //statsContainer1 = stage.insert(new Q.UI.Container({ asset: "gray", x: 150, y: 550, border: 1, shadow: 2, shadowColor: "rgba(0,0,0,0.5)", w: 300, h: 100 }));
+            //stage.insert(new Q.UI.Text({ label: "Für welches x ist  \nsin  (x) = " + A[tmp][0] + " und \ncos (x) = " + A[tmp][1] , color: "white", x: 0, y: 0 }), statsContainer1); // item 0
 
-// Magnet Level
-Q.scene("level3", function (stage) {
-	setHudText("Bringe die Lampe durch Induktion zum leuchten.");
-	Q.audio.stop();
-	Q.audio.play('bad.mp3');
-	
-	
-    var background = new Q.TileLayer({ dataAsset: 'level4.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
-    //stage.insert(background);
-	stage.insert(new Q.Repeater({ asset: "background.png", speedX: 0.5, speedY: 0.5, scale: 2 }));
-    stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level4.tmx', layerIndex:1,  sheet: 'tiles', tileW: 70, tileH: 70 }));
+        });
 
-	//Ziel
-	stage.insert(new Q.Door({ x: 300, y: 1293 })).open();
-	stage.insert(new Q.Door({ x: 1700, y: 1293, nextLevel: "level4"})).close();
-	
-    var player = stage.insert(new Q.Player({x: 200, y: 800}));
-    stage.add("viewport").follow(player,{x: false, y: false},{minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h});
-    stage.centerOn(600, 700);
-	//stage.viewport.offsetY = 70;
-	stage.viewport.scale = 0.6;
-	//stage.add("viewport").follow(player,{x: true, y: true},{minX: 0, maxX: 100, minY: 0, maxY: 100});
-
-    stage.insert(new Q.Bulb({ x: 1600, y: 700}));
-	
-	stage.insert(new Q.Bumper({ x: 230, y: 960, direction: "left", angle: 90}));
-	stage.insert(new Q.Bumper({ x: 1240, y: 960, direction: "right", angle: 270 }));
-	
-	stage.insert(new Q.Magnet({ x: 500, y: 690 }));
-	stage.insert(new Q.Stone({ x: 300, y: 810 }));
-	stage.insert(new Q.Woodbox({ x: 650, y: 540 }));
-	
-	stage.insert(new Q.Coil({ x: 1020, y: 900, angle: 180, scale: 0.4}));
-	stage.insert(new Q.Coil({ x: 700, y: 900, angle: 180, scale: 0.4}));
-	stage.insert(new Q.Coil({ x: 380, y: 900, angle: 180, scale: 0.4}));
+        // Magnet Level
+        Q.scene("level3", function (stage) {
+            setHudText("Bringe die Lampe durch Induktion zum leuchten.");
+            Q.audio.stop();
+            Q.audio.play('bad.mp3');
 
 
-});
+            var background = new Q.TileLayer({ dataAsset: 'level4.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
+            //stage.insert(background);
+            stage.insert(new Q.Repeater({ asset: "background.png", speedX: 0.5, speedY: 0.5, scale: 2 }));
+            stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level4.tmx', layerIndex: 1, sheet: 'tiles', tileW: 70, tileH: 70 }));
 
-// Wolkenlevel
-Q.scene("level4",function(stage) {
-	setHudText("Fange die richtigen Regentropfen.");
-    var background = new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
-	stage.insert(new Q.Repeater({ asset: "background2.png", speedX: 0.5, speedY: 0.5 }));
-    stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex:1,  sheet: 'tiles', tileW: 70, tileH: 70 }));
+            //Ziel
+            stage.insert(new Q.Door({ x: 300, y: 1293 })).open();
+            stage.insert(new Q.Door({ x: 1700, y: 1293, nextLevel: "level4" })).close();
 
-	stage.insert(new Q.Door({ x: 120, y: 591, nextLevel: "level0"})).open();  		
-	stage.insert(new Q.Door({ x: 900, y: 591, nextLevel: "level8"})).close(); 
-	
-    var player = stage.insert(new Q.Player({y:600, x: 200 }));
-    stage.add("viewport").follow(player,{x: true, y: true},{minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h});
+            var player = stage.insert(new Q.Player({ x: 200, y: 800 }));
+            stage.add("viewport").follow(player, { x: false, y: false }, { minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h });
+            stage.centerOn(600, 700);
+            //stage.viewport.offsetY = 70;
+            stage.viewport.scale = 0.6;
+            //stage.add("viewport").follow(player,{x: true, y: true},{minX: 0, maxX: 100, minY: 0, maxY: 100});
 
-	var cloud1Container = stage.insert(new Q.Cloud({ x: 500, y: 200 }));
-    var numberContainer = stage.insert(new Q.Raindrop({ x: 500, y: 200 }));
-	stage.insert(new Q.UI.Text({ label: "Natürliche Zahlen\n" + Q('Cloud').items[0].p.index + " von 10", color: "black", scale: 1.2 }), cloud1Container);
-	stage.insert(new Q.UI.Text({ label: "2", color: "black", scale: 1.2 }), numberContainer);
-   
-});
+            stage.insert(new Q.Bulb({ x: 1600, y: 700 }));
 
-// Fragenlevel Semester 1
-Q.scene("level5",function(stage) {
-	setHudText("Beantworte die Fragen um das Semester zu bestehen.");
-	var sinusQuestionsMax = 2;
-	var questions =
-    [
-        [	//Frage 1
-            "Welche der folgenden Binär-Zahlen\n entspricht der Dezimalzahl 118? ",  //Frage
-            "10101010",                                               				//Antwort A
-            "01110110",                                               				//Antwort B
-            "00110010",                                               				//Antwort C
-            "01100011",                                               				//Antwort D
-            2,                                                        				//richtige Antwort
-        ],[	//Frage 2
-            "Für welches x ist  \nsin  (x) = 0  und \ncos (x) = 1 ? ",    //Frage
-            "x = 1/3 pi",                                               //Antwort A
-            "x = 5/2 pi",                                               //Antwort B
-            "x = 1/2 pi",                                               //Antwort C
-            "x = 2 pi",                                                 //Antwort D
-            4,                                                          //richtige Antwort
-        ],
-    ];
+            stage.insert(new Q.Bumper({ x: 230, y: 960, direction: "left", angle: 90 }));
+            stage.insert(new Q.Bumper({ x: 1240, y: 960, direction: "right", angle: 270 }));
 
-    var background = new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
-    //stage.insert(background);
-    stage.insert(new Q.Repeater({ asset: "background2.png", speedX: 0.5, speedY: 0.5 }));
-    stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex:1,  sheet: 'tiles', tileW: 70, tileH: 70 }));
-    var quests = questions[Math.floor((Math.random() * sinusQuestionsMax))]; // zufällige Frage wählen aus den 2
-    // Teacher
-	var teacher = stage.insert(new Q.Teacher({ x: 600, y: 360, indexRightAnswer: quests[5]}));
-	//Frage
-    var questContainer = stage.insert(new Q.UI.Container({ fill: "#20575F", x: 600, y: 480, border: 0,	w: 750, h: 240}));
-    stage.insert(new Q.UI.Text({ label: quests [0], color: "white", x: 0, y: -70, scale: 0.9}), questContainer);
+            stage.insert(new Q.Magnet({ x: 500, y: 690 }));
+            stage.insert(new Q.Stone({ x: 300, y: 810 }));
+            stage.insert(new Q.Woodbox({ x: 650, y: 540 }));
 
-	var coords = [ 
-		{'x': 350, 'y': 510, 'value': 64},
-		{'x': 700, 'y': 510, 'value': 32},
-		{'x': 350, 'y': 570, 'value': 16},
-		{'x': 700, 'y': 570, 'value': 8}
-	];
-	
-	var quest;
-	for(var idx in coords){
-	    quest = stage.insert(new Q.UI.Container({ fill: "#184349", x: coords[idx].x , y: coords[idx].y, border: 0, w: 150, h: 50 }));
-		stage.insert(new Q.UI.Text({ label: quests[parseInt(idx)+1], color: "white", scale: 0.8, }), quest);
-	}
-
-	teacher.setIndexLog(1); // init nach den Fragen
-});
+            stage.insert(new Q.Coil({ x: 1020, y: 900, angle: 180, scale: 0.4 }));
+            stage.insert(new Q.Coil({ x: 700, y: 900, angle: 180, scale: 0.4 }));
+            stage.insert(new Q.Coil({ x: 380, y: 900, angle: 180, scale: 0.4 }));
 
 
-// osi
-Q.scene("level6", function (stage) {
-	Q.audio.stop();
-	Q.audio.play('chantey.mp3');
-	setHudText("Finde den passenden Schlüssel für jede Osi-Schicht.");
-    var background = new Q.TileLayer({ dataAsset: 'level3.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
-    //stage.insert(background);
-    stage.insert(new Q.Repeater({ asset: "background.png", speedX: 0.5, speedY: 0.5 , scale: 1.2}));
-    stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level3.tmx', layerIndex: 1, sheet: 'tiles', tileW: 70, tileH: 70 }));
+        });
 
-	stage.insert(new Q.Door({ x: 300, y: 591, nextLevel: "level0"})).open();  		
-	stage.insert(new Q.Door({ x: 1050, y: 591, nextLevel: "level7"})).close();  	
-	
-    var schichten = ["Bitübertragung", "Sicherung", "Vermittlung", "Transport", "Sitzung", "Darstellung", "Anwendung"];
-	var coords = [ 
-		{'x': 145, 'y': 253},
-		{'x': 355, 'y': 322},
-		{'x': 565, 'y': 393},
-		{'x': 774, 'y': 463},
-		{'x': 1325, 'y': 463},
-		{'x': 1535, 'y': 393},
-		{'x': 1745, 'y': 322},
-	];
+        // Wolkenlevel
+        Q.scene("level4", function (stage) {
+            setHudText("Fange die richtigen Regentropfen.");
+            var background = new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
+            stage.insert(new Q.Repeater({ asset: "background2.png", speedX: 0.5, speedY: 0.5 }));
+            stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 1, sheet: 'tiles', tileW: 70, tileH: 70 }));
 
-	var schichtenShuffled = schichten.slice(); //Array kopieren
-    shuffleArray(schichtenShuffled);
-	
-	var osiKey;
-	for(var idx in coords){
-	    osiKey = stage.insert(new Q.OsiKey({ x: coords[idx].x, y: coords[idx].y, value: schichten.indexOf(schichtenShuffled[idx]) + 1}));
-		stage.insert(new Q.UI.Text({ label: schichtenShuffled[idx], color: "black", x: 0, y: -70, scale: 0.9}), osiKey);
-	}
+            stage.insert(new Q.Door({ x: 120, y: 591, nextLevel: "level0" })).open();
+            stage.insert(new Q.Door({ x: 900, y: 591, nextLevel: "level8" })).close();
 
-	var osiBox = stage.insert(new Q.OsiBox({ x: 1050, y: 200, value: 7}));
-    stage.insert(new Q.UI.Text({ label: osiBox.p.value+"", color: "black", x: 0, y: -70, scale: 0.9}), osiBox);
+            var player = stage.insert(new Q.Player({ y: 600, x: 200 }));
+            stage.add("viewport").follow(player, { x: true, y: true }, { minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h });
 
-	stage.insert(new Q.OsiHelp({ x: 2600, y: 388}));
- 
-	var player = stage.insert(new Q.Player({y:600}));
-    stage.add("viewport").follow(player, { x: true, y: true }, { minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h });
+            var cloud1Container = stage.insert(new Q.Cloud({ x: 500, y: 200 }));
+            var numberContainer = stage.insert(new Q.Raindrop({ x: 500, y: 200 }));
+            stage.insert(new Q.UI.Text({ label: "Natürliche Zahlen\n" + Q('Cloud').items[0].p.index + " von 10", color: "black", scale: 1.2 }), cloud1Container);
+            stage.insert(new Q.UI.Text({ label: "2", color: "black", scale: 1.2 }), numberContainer);
 
-	
-});
+        });
 
-// flying
-Q.scene("level7", function (stage) {
-	setHudText("Fange die Übungsblätter mit den richtigen Lösungen.");
-	
-	// [1] ist immer die richtige
-	var questions = 
-	[
-        [
-			"Welche Zahl ist durch 3 teilbar?",
-            "3",
-            "7",
-			1,
-        ],[
-			"Welche Zahl ist eine Primzahl?",
-            "4",
-            "2",
-			2,
-		],[
-			"Was ist die Quersumme von 1337?",
-            "14",
-            "42",
-			1,
-		],[
-			"Was ist die Wurzel aus 9?",
-            "2",
-            "3",
-			2,
-		],[
-			"Welche Zahl ist durch 7 teilbar?",
-            "56",
-            "87",
-			1,
-		]
-	];
+        // Fragenlevel Semester 1
+        Q.scene("level5", function (stage) {
+            setHudText("Beantworte die Fragen um das Semester zu bestehen.");
+            var sinusQuestionsMax = 2;
+            var questions =
+                [
+                    [	//Frage 1
+                        "Welche der folgenden Binär-Zahlen\n entspricht der Dezimalzahl 118? ",  //Frage
+                        "10101010",                                               				//Antwort A
+                        "01110110",                                               				//Antwort B
+                        "00110010",                                               				//Antwort C
+                        "01100011",                                               				//Antwort D
+                        2,                                                        				//richtige Antwort
+                    ], [	//Frage 2
+                        "Für welches x ist  \nsin  (x) = 0  und \ncos (x) = 1 ? ",    //Frage
+                        "x = 1/3 pi",                                               //Antwort A
+                        "x = 5/2 pi",                                               //Antwort B
+                        "x = 1/2 pi",                                               //Antwort C
+                        "x = 2 pi",                                                 //Antwort D
+                        4,                                                          //richtige Antwort
+                    ],
+                ];
 
-    var background = new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
-    //stage.insert(background);
-    stage.insert(new Q.Repeater({ asset: "background.png", speedX: 0.5, speedY: 0.5, scale: 1.3 }));
-    stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 1, sheet: 'tiles', tileW: 70, tileH: 70 }));
+            var background = new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
+            //stage.insert(background);
+            stage.insert(new Q.Repeater({ asset: "background2.png", speedX: 0.5, speedY: 0.5 }));
+            stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 1, sheet: 'tiles', tileW: 70, tileH: 70 }));
+            var quests = questions[Math.floor((Math.random() * sinusQuestionsMax))]; // zufällige Frage wählen aus den 2
+            // Teacher
+            var teacher = stage.insert(new Q.Teacher({ x: 600, y: 360, indexRightAnswer: quests[5] }));
+            //Frage
+            var questContainer = stage.insert(new Q.UI.Container({ fill: "#20575F", x: 600, y: 480, border: 0, w: 750, h: 240 }));
+            stage.insert(new Q.UI.Text({ label: quests[0], color: "white", x: 0, y: -70, scale: 0.9 }), questContainer);
 
-	stage.insert(new Q.Door({ x: 100, y: 591, nextLevel: "level0"})).open();  		
-	stage.insert(new Q.Door({ x: 1100, y: 591, nextLevel: "level9"})).close();  	
-	
-    var player = stage.insert(new Q.Player({x: 200, y: 600}));
-    stage.add("viewport").follow(player, { x: true, y: true }, { minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h });
-	stage.insert(new Q.VerticalEnemySpawn({questions: questions}));
+            var coords = [
+                { 'x': 350, 'y': 510, 'value': 64 },
+                { 'x': 700, 'y': 510, 'value': 32 },
+                { 'x': 350, 'y': 570, 'value': 16 },
+                { 'x': 700, 'y': 570, 'value': 8 }
+            ];
 
-});
+            var quest;
+            for (var idx in coords) {
+                quest = stage.insert(new Q.UI.Container({ fill: "#184349", x: coords[idx].x, y: coords[idx].y, border: 0, w: 150, h: 50 }));
+                stage.insert(new Q.UI.Text({ label: quests[parseInt(idx) + 1], color: "white", scale: 0.8, }), quest);
+            }
 
-// Fragenlevel Semester 2
-Q.scene("level8",function(stage) {
-	setHudText("Beantworte die Fragen um das Semester zu bestehen.");
-	var sinusQuestionsMax = 2;
-	var questions =
-    [
-        [	//Frage 1
-            "Was sind die Grundzutaten für Induktion? ", //Frage
-            "Spule & Magnet",                             //Antwort A
-            "Spüle & Magnet",                             //Antwort B
-            "Nadel & Papier",                             //Antwort C
-            "Stoff & Eisen",                              //Antwort D
-            1,                                            //richtige Antwort
-        ],[	//Frage 2
-            "Welche der folgenden Zahlen sind alle Teil\n der positiven natürlichen Zahlen? ",    //Frage
-            "(-2)^2; 3; e^0",                                             //Antwort A
-            "(-2)^3; 5; e^1",                                             //Antwort B
-            "2!; 5/2; pi",                                                //Antwort C
-            "2!; 9/3; e",                                                 //Antwort D
-            1,                                                            //richtige Antwort
-        ],
-    ];
-
-    var background = new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
-    //stage.insert(background);
-    stage.insert(new Q.Repeater({ asset: "background2.png", speedX: 0.5, speedY: 0.5 }));
-    stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex:1,  sheet: 'tiles', tileW: 70, tileH: 70 }));
-    var quests = questions[Math.floor((Math.random() * sinusQuestionsMax))]; // zufällige Frage wählen aus den 2
-    // Teacher
-	var teacher = stage.insert(new Q.Teacher({ x: 600, y: 360, indexRightAnswer: quests[5]}));
-	//Frage
-    var questContainer = stage.insert(new Q.UI.Container({ fill: "#20575F", x: 600, y: 480, border: 0,	w: 750, h: 240}));
-    stage.insert(new Q.UI.Text({ label: quests [0], color: "white", x: 0, y: -70, scale: 0.9}), questContainer);
-
-	var coords = [ 
-		{'x': 350, 'y': 510, 'value': 64},
-		{'x': 700, 'y': 510, 'value': 32},
-		{'x': 350, 'y': 570, 'value': 16},
-		{'x': 700, 'y': 570, 'value': 8}
-	];
-	
-	var quest;
-	for(var idx in coords){
-	    quest = stage.insert(new Q.UI.Container({ fill: "#184349", x: coords[idx].x , y: coords[idx].y, border: 0, w: 150, h: 50 }));
-		stage.insert(new Q.UI.Text({ label: quests[parseInt(idx)+1], color: "white", scale: 0.6, }), quest);
-	}
-
-	teacher.setIndexLog(1); // init nach den Fragen
-});
-
-// Fragenlevel Semester 3
-Q.scene("level9",function(stage) {
-	setHudText("Beantworte die Fragen um das Semester zu bestehen.");
-	var sinusQuestionsMax = 2;
-	var questions =
-    [
-        [	//Frage 1
-            "Wie lautet die äußere Schicht im OSI-Schichtenmodell? ",  //Frage
-            "Transport",                                     //Antwort A
-            "Anwendung",                                        //Antwort B
-            "Vermittlung",                                        //Antwort C
-            "Sitzung",                                          //Antwort D
-            2,                                                        		  //richtige Antwort
-        ],[	//Frage 2
-            "Welcher Zahl entspricht i^2? ",    //Frage
-            "-1",                                //Antwort A
-            "1",                                 //Antwort B
-            "0",                                 //Antwort C
-            "i",                                 //Antwort D
-            1,                                   //richtige Antwort
-        ],
-    ];
-
-    var background = new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
-    //stage.insert(background);
-    stage.insert(new Q.Repeater({ asset: "background2.png", speedX: 0.5, speedY: 0.5 }));
-    stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex:1,  sheet: 'tiles', tileW: 70, tileH: 70 }));
-    var quests = questions[Math.floor((Math.random() * sinusQuestionsMax))]; // zufällige Frage wählen aus den 2
-    // Teacher
-	var teacher = stage.insert(new Q.Teacher({ x: 600, y: 360, indexRightAnswer: quests[5]}));
-	//Frage
-    var questContainer = stage.insert(new Q.UI.Container({ fill: "#20575F", x: 600, y: 480, border: 0,	w: 750, h: 240}));
-    stage.insert(new Q.UI.Text({ label: quests [0], color: "white", x: 0, y: -70, scale: 0.9}), questContainer);
-
-	var coords = [ 
-		{'x': 350, 'y': 510, 'value': 64},
-		{'x': 700, 'y': 510, 'value': 32},
-		{'x': 350, 'y': 570, 'value': 16},
-		{'x': 700, 'y': 570, 'value': 8}
-	];
-	
-	var quest;
-	for(var idx in coords){
-	    quest = stage.insert(new Q.UI.Container({ fill: "#184349", x: coords[idx].x , y: coords[idx].y, border: 0, w: 150, h: 50 }));
-		stage.insert(new Q.UI.Text({ label: quests[parseInt(idx)+1], color: "white", scale: 0.8, }), quest);
-	}
-
-	teacher.setIndexLog(1); // init nach den Fragen
-});
+            teacher.setIndexLog(1); // init nach den Fragen
+        });
 
 
-// Spielende
-Q.scene('endGame',function(stage) {
-    var container = stage.insert(new Q.UI.Container({x: Q.width/2, y: Q.height/2, fill: "rgba(0,0,0,0.5)"}));
-    var btnMenu = container.insert(new Q.UI.Button({ x: 0, y: 0, fill: "#CCCCCC", label: "Zurück zum Campus" }))
+        // osi
+        Q.scene("level6", function (stage) {
+            Q.audio.stop();
+            Q.audio.play('chantey.mp3');
+            setHudText("Finde den passenden Schlüssel für jede Osi-Schicht.");
+            var background = new Q.TileLayer({ dataAsset: 'level3.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
+            //stage.insert(background);
+            stage.insert(new Q.Repeater({ asset: "background.png", speedX: 0.5, speedY: 0.5, scale: 1.2 }));
+            stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level3.tmx', layerIndex: 1, sheet: 'tiles', tileW: 70, tileH: 70 }));
 
-    var label = container.insert(new Q.UI.Text({x:0, y: -10 - btnMenu.p.h, color: "white", label: stage.options.label }));
-	
-    btnMenu.on("click",function() {
-      Q.clearStages();
-      Q.stageScene("level0");
-	  setLevelWinImage();//TODO
-    });
+            stage.insert(new Q.Door({ x: 300, y: 591, nextLevel: "level0" })).open();
+            stage.insert(new Q.Door({ x: 1050, y: 591, nextLevel: "level7" })).close();
 
-    container.fit(40);
-});
+            var schichten = ["Bitübertragung", "Sicherung", "Vermittlung", "Transport", "Sitzung", "Darstellung", "Anwendung"];
+            var coords = [
+                { 'x': 145, 'y': 253 },
+                { 'x': 355, 'y': 322 },
+                { 'x': 565, 'y': 393 },
+                { 'x': 774, 'y': 463 },
+                { 'x': 1325, 'y': 463 },
+                { 'x': 1535, 'y': 393 },
+                { 'x': 1745, 'y': 322 },
+            ];
 
-// load assets
-//theme.mp3
-Q.load("level0.tmx, level1.tmx, level2.tmx, level3.tmx, level4.tmx, jump.mp3, "+
-		"bad.mp3, chantey.mp3, locker.mp3, returns.mp3, title.mp3, "+
-		"tiles_test.png, player.png, background.png, background2.png, logo.png, osiKey.png, lock.png, bumper.png,"+
-		"logik1.png, logik0.png, box.png, doorLock.png, doorOpen.png, teacher.png, cloud.png, raindrop.png, zettel.png, "+
-		"buttonRed_pressed.png, einheitsvektor.png, bulb.png, coil.png, mag.png, osi.png, questionmark.png, "+
-		"stone.png, woodbox.png", function() {
+            var schichtenShuffled = schichten.slice(); //Array kopieren
+            shuffleArray(schichtenShuffled);
 
-	Q.sheet("tiles", "tiles_test.png", {tilew: 70, tileh: 70});
-	Q.sheet("player", "player.png", { tilew: 201, tileh: 290});
-	Q.sheet("bulb", "bulb.png", { tilew: 200, tileh: 170});
-    Q.stageScene("level0");
+            var osiKey;
+            for (var idx in coords) {
+                osiKey = stage.insert(new Q.OsiKey({ x: coords[idx].x, y: coords[idx].y, value: schichten.indexOf(schichtenShuffled[idx]) + 1 }));
+                stage.insert(new Q.UI.Text({ label: schichtenShuffled[idx], color: "black", x: 0, y: -70, scale: 0.9 }), osiKey);
+            }
 
-});
+            var osiBox = stage.insert(new Q.OsiBox({ x: 1050, y: 200, value: 7 }));
+            stage.insert(new Q.UI.Text({ label: osiBox.p.value + "", color: "black", x: 0, y: -70, scale: 0.9 }), osiBox);
 
-													</script>
-												</body>
-											</html>
-											
+            stage.insert(new Q.OsiHelp({ x: 2600, y: 388 }));
+
+            var player = stage.insert(new Q.Player({ y: 600 }));
+            stage.add("viewport").follow(player, { x: true, y: true }, { minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h });
+
+
+        });
+
+        // flying
+        Q.scene("level7", function (stage) {
+            setHudText("Fange die Übungsblätter mit den richtigen Lösungen.");
+
+            // [1] ist immer die richtige
+            var questions =
+                [
+                    [
+                        "Welche Zahl ist durch 3 teilbar?",
+                        "3",
+                        "7",
+                        1,
+                    ], [
+                        "Welche Zahl ist eine Primzahl?",
+                        "4",
+                        "2",
+                        2,
+                    ], [
+                        "Was ist die Quersumme von 1337?",
+                        "14",
+                        "42",
+                        1,
+                    ], [
+                        "Was ist die Wurzel aus 9?",
+                        "2",
+                        "3",
+                        2,
+                    ], [
+                        "Welche Zahl ist durch 7 teilbar?",
+                        "56",
+                        "87",
+                        1,
+                    ]
+                ];
+
+            var background = new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
+            //stage.insert(background);
+            stage.insert(new Q.Repeater({ asset: "background.png", speedX: 0.5, speedY: 0.5, scale: 1.3 }));
+            stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 1, sheet: 'tiles', tileW: 70, tileH: 70 }));
+
+            stage.insert(new Q.Door({ x: 100, y: 591, nextLevel: "level0" })).open();
+            stage.insert(new Q.Door({ x: 1100, y: 591, nextLevel: "level9" })).close();
+
+            var player = stage.insert(new Q.Player({ x: 200, y: 600 }));
+            stage.add("viewport").follow(player, { x: true, y: true }, { minX: 0, maxX: background.p.w, minY: 0, maxY: background.p.h });
+            stage.insert(new Q.VerticalEnemySpawn({ questions: questions }));
+
+        });
+
+        // Fragenlevel Semester 2
+        Q.scene("level8", function (stage) {
+            setHudText("Beantworte die Fragen um das Semester zu bestehen.");
+            var sinusQuestionsMax = 2;
+            var questions =
+                [
+                    [	//Frage 1
+                        "Was sind die Grundzutaten für Induktion? ", //Frage
+                        "Spule & Magnet",                             //Antwort A
+                        "Spüle & Magnet",                             //Antwort B
+                        "Nadel & Papier",                             //Antwort C
+                        "Stoff & Eisen",                              //Antwort D
+                        1,                                            //richtige Antwort
+                    ], [	//Frage 2
+                        "Welche der folgenden Zahlen sind alle Teil\n der positiven natürlichen Zahlen? ",    //Frage
+                        "(-2)^2; 3; e^0",                                             //Antwort A
+                        "(-2)^3; 5; e^1",                                             //Antwort B
+                        "2!; 5/2; pi",                                                //Antwort C
+                        "2!; 9/3; e",                                                 //Antwort D
+                        1,                                                            //richtige Antwort
+                    ],
+                ];
+
+            var background = new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
+            //stage.insert(background);
+            stage.insert(new Q.Repeater({ asset: "background2.png", speedX: 0.5, speedY: 0.5 }));
+            stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 1, sheet: 'tiles', tileW: 70, tileH: 70 }));
+            var quests = questions[Math.floor((Math.random() * sinusQuestionsMax))]; // zufällige Frage wählen aus den 2
+            // Teacher
+            var teacher = stage.insert(new Q.Teacher({ x: 600, y: 360, indexRightAnswer: quests[5] }));
+            //Frage
+            var questContainer = stage.insert(new Q.UI.Container({ fill: "#20575F", x: 600, y: 480, border: 0, w: 750, h: 240 }));
+            stage.insert(new Q.UI.Text({ label: quests[0], color: "white", x: 0, y: -70, scale: 0.9 }), questContainer);
+
+            var coords = [
+                { 'x': 350, 'y': 510, 'value': 64 },
+                { 'x': 700, 'y': 510, 'value': 32 },
+                { 'x': 350, 'y': 570, 'value': 16 },
+                { 'x': 700, 'y': 570, 'value': 8 }
+            ];
+
+            var quest;
+            for (var idx in coords) {
+                quest = stage.insert(new Q.UI.Container({ fill: "#184349", x: coords[idx].x, y: coords[idx].y, border: 0, w: 150, h: 50 }));
+                stage.insert(new Q.UI.Text({ label: quests[parseInt(idx) + 1], color: "white", scale: 0.6, }), quest);
+            }
+
+            teacher.setIndexLog(1); // init nach den Fragen
+        });
+
+        // Fragenlevel Semester 3
+        Q.scene("level9", function (stage) {
+            setHudText("Beantworte die Fragen um das Semester zu bestehen.");
+            var sinusQuestionsMax = 2;
+            var questions =
+                [
+                    [	//Frage 1
+                        "Wie lautet die äußere Schicht im OSI-Schichtenmodell? ",  //Frage
+                        "Transport",                                     //Antwort A
+                        "Anwendung",                                        //Antwort B
+                        "Vermittlung",                                        //Antwort C
+                        "Sitzung",                                          //Antwort D
+                        2,                                                        		  //richtige Antwort
+                    ], [	//Frage 2
+                        "Welcher Zahl entspricht i^2? ",    //Frage
+                        "-1",                                //Antwort A
+                        "1",                                 //Antwort B
+                        "0",                                 //Antwort C
+                        "i",                                 //Antwort D
+                        1,                                   //richtige Antwort
+                    ],
+                ];
+
+            var background = new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 0, sheet: 'tiles', tileW: 70, tileH: 70, type: Q.SPRITE_NONE });
+            //stage.insert(background);
+            stage.insert(new Q.Repeater({ asset: "background2.png", speedX: 0.5, speedY: 0.5 }));
+            stage.collisionLayer(new Q.TileLayer({ dataAsset: 'level1.tmx', layerIndex: 1, sheet: 'tiles', tileW: 70, tileH: 70 }));
+            var quests = questions[Math.floor((Math.random() * sinusQuestionsMax))]; // zufällige Frage wählen aus den 2
+            // Teacher
+            var teacher = stage.insert(new Q.Teacher({ x: 600, y: 360, indexRightAnswer: quests[5] }));
+            //Frage
+            var questContainer = stage.insert(new Q.UI.Container({ fill: "#20575F", x: 600, y: 480, border: 0, w: 750, h: 240 }));
+            stage.insert(new Q.UI.Text({ label: quests[0], color: "white", x: 0, y: -70, scale: 0.9 }), questContainer);
+
+            var coords = [
+                { 'x': 350, 'y': 510, 'value': 64 },
+                { 'x': 700, 'y': 510, 'value': 32 },
+                { 'x': 350, 'y': 570, 'value': 16 },
+                { 'x': 700, 'y': 570, 'value': 8 }
+            ];
+
+            var quest;
+            for (var idx in coords) {
+                quest = stage.insert(new Q.UI.Container({ fill: "#184349", x: coords[idx].x, y: coords[idx].y, border: 0, w: 150, h: 50 }));
+                stage.insert(new Q.UI.Text({ label: quests[parseInt(idx) + 1], color: "white", scale: 0.8, }), quest);
+            }
+
+            teacher.setIndexLog(1); // init nach den Fragen
+        });
+
+
+        // Spielende
+        Q.scene('endGame', function (stage) {
+            var container = stage.insert(new Q.UI.Container({ x: Q.width / 2, y: Q.height / 2, fill: "rgba(0,0,0,0.5)" }));
+            var btnMenu = container.insert(new Q.UI.Button({ x: 0, y: 0, fill: "#CCCCCC", label: "Zurück zum Campus" }))
+
+            var label = container.insert(new Q.UI.Text({ x: 0, y: -10 - btnMenu.p.h, color: "white", label: stage.options.label }));
+
+            btnMenu.on("click", function () {
+                Q.clearStages();
+                Q.stageScene("level0");
+                setLevelWinImage();//TODO
+            });
+
+            container.fit(40);
+        });
+
+        // load assets
+        //theme.mp3
+        Q.load("level0.tmx, level1.tmx, level2.tmx, level3.tmx, level4.tmx, jump.mp3, " +
+            "bad.mp3, chantey.mp3, locker.mp3, returns.mp3, title.mp3, " +
+            "tiles_test.png, player.png, background.png, background2.png, logo.png, osiKey.png, lock.png, bumper.png," +
+            "logik1.png, logik0.png, box.png, doorLock.png, doorOpen.png, teacher.png, cloud.png, raindrop.png, zettel.png, " +
+            "buttonRed_pressed.png, einheitsvektor.png, bulb.png, coil.png, mag.png, osi.png, questionmark.png, " +
+            "stone.png, woodbox.png", function () {
+
+                Q.sheet("tiles", "tiles_test.png", { tilew: 70, tileh: 70 });
+                Q.sheet("player", "player.png", { tilew: 201, tileh: 290 });
+                Q.sheet("bulb", "bulb.png", { tilew: 200, tileh: 170 });
+                Q.stageScene("level0");
+
+            });
+
+    </script>
+</body>
+
+</html>
